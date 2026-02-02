@@ -1,4 +1,5 @@
 ﻿using TreeService.Data;
+using TreeService.DTOs;
 using TreeService.Entities;
 using TreeService.Repositories;
 
@@ -15,8 +16,23 @@ namespace TreeService.Services
             _db = db;
         }
 
-        public async Task<TreeNode> CreateAsync(TreeNode node, CancellationToken cancellationToken)
+        public async Task<TreeNode> CreateAsync(CreateTreeNodeDto dto, CancellationToken cancellationToken)
         {
+            if (dto.ParentId.HasValue)
+            {
+                var parent =  await _treeNodeRepository.ExistsAsync(dto.ParentId.Value, cancellationToken);
+
+                if (parent)
+                {
+                    throw new Exception("Родительский узел не найден");
+                }
+            }
+            var node = new TreeNode
+            {
+                Name = dto.Name,
+                ParentId = dto.ParentId
+            };
+
             await _treeNodeRepository.AddAsync(node, cancellationToken);
             return node;
         }
@@ -47,7 +63,7 @@ namespace TreeService.Services
             return await _treeNodeRepository.GetByIdAsync(id, cancellationToken);    
         }
 
-        public async Task UpdateAsync(int id, TreeNode updatedNode, CancellationToken cancellationToken)
+        public async Task UpdateAsync(int id, UpdateTreeNodeDto dto, CancellationToken cancellationToken)
         {
             var correctNode = await _treeNodeRepository.GetByIdAsync(id, cancellationToken);
             if (correctNode == null)
@@ -55,9 +71,9 @@ namespace TreeService.Services
                 throw new Exception("Узел не найден");
             }
 
-            if (updatedNode.ParentId.HasValue)
+            if (dto.ParentId.HasValue)
             {
-                if (await ChekCycle(id, updatedNode.ParentId, cancellationToken))
+                if (await ChekCycle(id, dto.ParentId, cancellationToken))
                 {
                     throw new Exception("Невозможно установить родителя, это приведет к зацикленности");
                 }
@@ -65,8 +81,8 @@ namespace TreeService.Services
 
             using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
 
-            correctNode.Name = updatedNode.Name;
-            correctNode.Parent = updatedNode.Parent;
+            correctNode.Name = dto.Name;
+            correctNode.Parent = dtoe.Parent;
 
             await _treeNodeRepository.UpdateAsync(correctNode, cancellationToken);
 

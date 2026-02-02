@@ -42,5 +42,11 @@ namespace TreeService.Repositories
             await _dbContext.SaveChangesAsync(cancellationToken);
 
         }
+
+        public async Task<bool> ExistAsync(int id, CancellationToken cancellationToken)
+        {
+            return await _dbContext.TreeNodes
+                .AnyAsync(n=>n.Id == id, cancellationToken);
+        }
     }
 }
