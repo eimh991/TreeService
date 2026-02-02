@@ -82,7 +82,7 @@ namespace TreeService.Services
             using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
 
             correctNode.Name = dto.Name;
-            correctNode.Parent = dtoe.Parent;
+            correctNode.ParentId = dto.ParentId;
 
             await _treeNodeRepository.UpdateAsync(correctNode, cancellationToken);
 
