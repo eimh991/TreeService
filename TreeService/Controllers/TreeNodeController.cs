@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using TreeService.DTOs;
 using TreeService.Entities;
 using TreeService.Services;
 
@@ -37,19 +38,19 @@ namespace TreeService.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(TreeNode node, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create(CreateTreeNodeDto dto, CancellationToken cancellationToken)
         {
-            var createdNode = await _treeNodeService.CreateAsync(node, cancellationToken);
+            var createdNode = await _treeNodeService.CreateAsync(dto, cancellationToken);
 
             return CreatedAtAction(nameof(GetById), new { id = createdNode.Id }, createdNode);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, TreeNode node, CancellationToken cancellationToken)
+        public async Task<IActionResult> Update(int id, UpdateTreeNodeDto dto, CancellationToken cancellationToken)
         {
             try
             {
-                await _treeNodeService.UpdateAsync(id, node, cancellationToken);
+                await _treeNodeService.UpdateAsync(id, dto, cancellationToken);
                 return NoContent();
 
             }

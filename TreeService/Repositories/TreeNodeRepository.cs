@@ -43,7 +43,7 @@ namespace TreeService.Repositories
 
         }
 
-        public async Task<bool> ExistAsync(int id, CancellationToken cancellationToken)
+        public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken)
         {
             return await _dbContext.TreeNodes
                 .AnyAsync(n=>n.Id == id, cancellationToken);
