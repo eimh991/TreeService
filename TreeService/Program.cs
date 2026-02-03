@@ -1,5 +1,7 @@
 
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TreeService.Auth;
 using TreeService.Data;
 using TreeService.Repositories;
 using TreeService.Services;
@@ -22,8 +24,15 @@ namespace TreeService
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.Configure<JwtSettings>(
+                builder.Configuration.GetSection("Jwt"));
+
             builder.Services.AddScoped<ITreeNodeRepository, TreeNodeRepository>();
             builder.Services.AddScoped<ITreeNodeService, TreeNodeService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
             var app = builder.Build();
 

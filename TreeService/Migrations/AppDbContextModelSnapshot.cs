@@ -37,6 +37,29 @@ namespace TreeService.Migrations
                     b.ToTable("TreeNodes");
                 });
 
+            modelBuilder.Entity("TreeService.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("TreeService.Entities.TreeNode", b =>
                 {
                     b.HasOne("TreeService.Entities.TreeNode", "Parent")
