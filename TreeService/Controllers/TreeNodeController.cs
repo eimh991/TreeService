@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TreeService.Auth;
 using TreeService.DTOs;
 using TreeService.Entities;
 using TreeService.Services;
 
 namespace TreeService.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TreeNodeController: ControllerBase
@@ -37,6 +40,7 @@ namespace TreeService.Controllers
             return Ok(node);
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpPost]
         public async Task<IActionResult> Create(CreateTreeNodeDto dto, CancellationToken cancellationToken)
         {
@@ -45,6 +49,7 @@ namespace TreeService.Controllers
             return CreatedAtAction(nameof(GetById), new { id = createdNode.Id }, createdNode);
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UpdateTreeNodeDto dto, CancellationToken cancellationToken)
         {
@@ -60,6 +65,7 @@ namespace TreeService.Controllers
             }
         }
 
+        [Authorize(Roles = Roles.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {

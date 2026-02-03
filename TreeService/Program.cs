@@ -5,6 +5,9 @@ using TreeService.Auth;
 using TreeService.Data;
 using TreeService.Repositories;
 using TreeService.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace TreeService
 {
@@ -27,6 +30,30 @@ namespace TreeService
             builder.Services.Configure<JwtSettings>(
                 builder.Configuration.GetSection("Jwt"));
 
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidAudience = jwtSettings["Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSettings["Key"]!)
+                    )
+                };
+            });
+
             builder.Services.AddScoped<ITreeNodeRepository, TreeNodeRepository>();
             builder.Services.AddScoped<ITreeNodeService, TreeNodeService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -45,6 +72,7 @@ namespace TreeService
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
