@@ -1,4 +1,5 @@
-﻿using TreeService.Data;
+﻿using System.Xml.Linq;
+using TreeService.Data;
 using TreeService.DTOs;
 using TreeService.Entities;
 using TreeService.Repositories;
@@ -22,7 +23,7 @@ namespace TreeService.Services
             {
                 var parent =  await _treeNodeRepository.ExistsAsync(dto.ParentId.Value, cancellationToken);
 
-                if (parent)
+                if (!parent)
                 {
                     throw new Exception("Родительский узел не найден");
                 }
@@ -39,34 +40,36 @@ namespace TreeService.Services
 
         public async Task DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var correctNode = await _treeNodeRepository.GetByIdAsync(id,cancellationToken);
-            if(correctNode == null)
+            var correctNodeDto = await _treeNodeRepository.GetByIdAsync(id,cancellationToken);
+            if(correctNodeDto == null)
             {
                 throw new Exception("Узел не найден");
             }
 
-            if(correctNode.Children != null)
+            if(correctNodeDto.Children.Count >= 1)
             {
-                throw new Exception("Нельзя удалить узел, укоторого есть связь с другими узлами");
+                throw new Exception("Нельзя удалить узел, у которого есть связь с другими узлами");
             }
+            
+            var node = ConvertTreeNodeDto(correctNodeDto);
 
-            await _treeNodeRepository.DeleteAsync(correctNode, cancellationToken);
+            await _treeNodeRepository.DeleteAsync(node, cancellationToken);
         }
 
-        public async Task<List<TreeNode>> GetAllAsync(CancellationToken cancellationToken)
+        public async Task<List<TreeNodeDto>> GetAllAsync(CancellationToken cancellationToken)
         {
             return  await _treeNodeRepository.GetAllAsync(cancellationToken);
         }
 
-        public async Task<TreeNode?> GetByIdAsync(int id, CancellationToken cancellationToken)
+        public async Task<TreeNodeDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _treeNodeRepository.GetByIdAsync(id, cancellationToken);    
         }
 
         public async Task UpdateAsync(int id, UpdateTreeNodeDto dto, CancellationToken cancellationToken)
         {
-            var correctNode = await _treeNodeRepository.GetByIdAsync(id, cancellationToken);
-            if (correctNode == null)
+            var correctNodeDto = await _treeNodeRepository.GetByIdAsync(id, cancellationToken);
+            if (correctNodeDto == null)
             {
                 throw new Exception("Узел не найден");
             }
@@ -81,29 +84,23 @@ namespace TreeService.Services
 
             using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
 
-            correctNode.Name = dto.Name;
-            correctNode.ParentId = dto.ParentId;
+            correctNodeDto.Name = dto.Name;
+            correctNodeDto.ParentId = dto.ParentId;
 
-            await _treeNodeRepository.UpdateAsync(correctNode, cancellationToken);
+            var node = ConvertTreeNodeDto(correctNodeDto);
+
+            await _treeNodeRepository.UpdateAsync(node, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
 
         }
 
-        public async Task<List<TreeNode>> GetTreesNodesAsync(CancellationToken cancellationToken)
+        public async Task<List<TreeNodeFlatDto>> GetTreesNodesAsync(CancellationToken cancellationToken)
         {
-            var allNodes = await _treeNodeRepository.GetAllAsync(cancellationToken);
+            var allNodes = await _treeNodeRepository.GetAllToExportAsync(cancellationToken);
 
-            var rootNodes = allNodes
-                .Where(n=>n.ParentId == null)
-                .ToList();
-
-            foreach(var root in rootNodes)
-            {
-                PopulateChildren(root, allNodes);
-            }
-
-            return rootNodes;
+        
+            return allNodes;
         }
 
         private async Task<bool> ChekCycle(int nodeId, int? newParentId, CancellationToken cancellationToken)
@@ -130,16 +127,25 @@ namespace TreeService.Services
             return false;
         }
 
-        private void PopulateChildren(TreeNode node, List<TreeNode> allNodes)
+        private TreeNode ConvertTreeNodeDto(TreeNodeDto nodeDto)
         {
-            node.Children = allNodes
-                .Where(n=>n.ParentId == node.Id)
-                .ToList();
+           var node = new TreeNode
+           {
+               Id = nodeDto.Id,
+               ParentId = nodeDto.ParentId,
+               Name = nodeDto.Name,
+               Children = new List<TreeNode>()
+           };
 
-            foreach (var children in node.Children)
-            {
-                PopulateChildren(children, allNodes);
-            }
+           foreach (var childDto in nodeDto.Children)
+           {
+               var childEntity = ConvertTreeNodeDto(childDto);
+               childEntity.Parent = node; 
+               node.Children.Add(childEntity);
+           }
+
+           return node;
         }
+
     }
 }

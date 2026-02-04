@@ -32,7 +32,7 @@ namespace TreeService.Services
             var user = new User
             {
                 UserName = dto.Username,
-                PasswordHash = dto.Password,
+                PasswordHash = _hasher.Hash(dto.Password),
                 Role = Roles.User
             }; 
 
